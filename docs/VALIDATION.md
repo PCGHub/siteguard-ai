@@ -11,7 +11,7 @@
 - `npm run test:e2e` with system Chromium: 6 passed, 0 skipped; desktop and mobile.
   These public tests ran against the production build with no Supabase bindings.
 - `npm audit --omit=dev --audit-level=high`: 0 known runtime vulnerabilities.
-- Full local Supabase browser acceptance: pending local container startup.
+- Full local Supabase browser acceptance: **unrun (2 test cases)**. Local stack startup is blocked by the runner storage capability described below.
 
 The migration was executed in embedded PostgreSQL (PGlite), with minimal test fixtures
 for Supabase-owned auth/storage schemas. Tests exercise grants, RLS, organization
@@ -27,8 +27,12 @@ They do not establish that a hosted Supabase project's Auth or Storage HTTP APIs
   verified against the official release checksum file. No verification was disabled.
 - Default Supabase ECR registry was denied; Docker Hub access works.
 - Full optional-service downloads exhausted disk and interrupted one test run.
-  Removed only images/cache downloaded during this task and reduced local services;
-  the interrupted tests and build subsequently passed.
+  Removed images/cache downloaded during this task and reduced local services;
+  the interrupted tests and build subsequently passed. A second attempt confirmed
+  Docker uses the `vfs` driver, duplicating the official PostgreSQL image layers
+  until the 32 GB disk filled again. Stopped startup and removed these task-owned
+  images, restoring 25 GB free. Full Auth/Storage HTTP validation needs an approved
+  hosted development project or a runner with a suitable storage driver/disk.
 - Browser tests initially exposed an absolute redirect using the wildcard bind host;
   confirmation responses now use fixed relative destinations. Rerun passed.
 - A development-server restart during a test run interrupted navigation; final public
@@ -36,8 +40,9 @@ They do not establish that a hosted Supabase project's Auth or Storage HTTP APIs
 
 ## External access and approval boundaries
 
-GitHub repository reads and dry-run branch push succeeded. GitHub API requests return
-Forbidden, so pull-request API creation is not yet verified. No usable Supabase or
+GitHub repository reads and dry-run branch push succeeded. The branch was committed and pushed successfully. GitHub GraphQL rejected
+`gh pr create` with Forbidden; **no pull request was created**. The review description
+is saved in docs/PR_DESCRIPTION.md. No usable Supabase or
 Vercel bindings are injected; management API requests are blocked by network access.
 Official hosted documentation was also denied by the network policy; bundled Next.js
 API/auth documentation and installed SDK types were consulted.
@@ -49,3 +54,10 @@ and import the repository into an approved Vercel team with Preview variables.
 Production deployment and production credential use require separate explicit approval.
 
 GitHub Actions configuration exists but its remote execution is not claimed here.
+
+Cloud configuration draft saved: reproducible npm install script, startup instructions,
+and the two public Supabase variable requirements. Requested custom network additions
+are api.github.com, api.supabase.com, api.vercel.com, nextjs.org, supabase.com and vercel.com.
+These draft changes are not applied or published. Review/save them in environment
+settings, then publish the environment when its intended capabilities are acceptable.
+The authenticated development workflow is not yet validated or ready.

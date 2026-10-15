@@ -59,7 +59,7 @@ This cloud runner's latest CLI cannot write to its read-only home directory. Dur
 validation a checksum-verified Supabase CLI 2.75.0 binary outside the repository was
 used instead. Its default ECR registry was denied; setting
 `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` uses Docker Hub without disabling checks.
-A normal workstation can use the npm-installed CLI. CLI startup status can include
+A normal workstation can use the npm-installed CLI. This runner also uses Docker `vfs`: even the reduced official stack exhausted its 32 GB disk during PostgreSQL image unpacking. Use an approved hosted development project or a Docker environment with sufficient disk and an appropriate storage driver. Full local authentication tests remain unrun here. CLI startup status can include
 local credentials: never publish or paste its full output.
 
 ## Validation

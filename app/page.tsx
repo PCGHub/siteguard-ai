@@ -7,7 +7,7 @@ export default function Home() {
           ◈ SiteGuard AI
         </Link>
         <Link className="button secondary" href="/login">
-          Sign in ↗
+          Sign in →
         </Link>
       </header>
       <main className="landing">

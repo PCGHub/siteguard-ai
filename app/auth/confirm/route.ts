@@ -1,11 +1,12 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/server";
+import { configured, supabase } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/validation";
 export async function GET(request: NextRequest) {
   const token_hash = request.nextUrl.searchParams.get("token_hash"),
     type = request.nextUrl.searchParams.get("type");
   if (
+    configured() &&
     token_hash &&
     (type === "signup" || type === "recovery" || type === "email")
   ) {

@@ -10,6 +10,6 @@ RLS policies, a transactional onboarding RPC and a private evidence bucket. Clie
 role/membership mutation and evidence writes remain denied. Inspection/AI/billing
 workflows and invitations are explicitly deferred.
 
-Validation: see docs/VALIDATION.md for exact results and limitations. Hosted Supabase
+Validation: lint, typecheck, production build, 24 unit/PostgreSQL tests and six desktop/mobile public browser tests passed. Full local Auth acceptance is blocked by Docker vfs exhausting the 32 GB disk; no hosted credentials were available. See docs/VALIDATION.md for exact results and limitations. Hosted Supabase
 and Vercel configuration require owner selection/approval; no production credentials,
 remote migrations or production deployment are included.

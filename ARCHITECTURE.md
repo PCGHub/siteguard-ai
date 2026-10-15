@@ -8,7 +8,7 @@ no unprotected custom mutation APIs are exposed.
 Supabase Auth owns passwords, email verification, recovery and session tokens.
 `proxy.ts` refreshes cookies; every protected page/action independently calls
 `auth.getUser()`. Authorization comes from database membership, never user metadata.
-Cookies use the Supabase SSR defaults; they are not claimed to be HttpOnly. Never
+Session cookies are HttpOnly, SameSite=Lax, and Secure in production; browser JavaScript does not receive tokens. Never
 share SSR Supabase clients across requests or cache tenant pages publicly.
 
 PostgreSQL provides transactions, constraints, RLS and narrowly scoped definer RPCs.

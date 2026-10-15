@@ -16,7 +16,7 @@ before opening public registration. Invitations, MFA UI, support access, deletio
 retention, monitoring, backup recovery drills and comprehensive audit trails remain
 future work. No commercial security certification or regulatory compliance is claimed.
 
-Cookies follow Supabase SSR defaults. Apply CSP/XSS hardening and deployment security
+Session cookies are HttpOnly, SameSite=Lax, and Secure in production. Auth token refresh stays on the server. Apply CSP/XSS hardening and deployment security
 review before production. Basic anti-framing, no-referrer and nosniff headers are set.
 Error pages avoid returning database error detail. Public messages are React-escaped.
 Email links restrict their token type and post-auth destination; no arbitrary redirect

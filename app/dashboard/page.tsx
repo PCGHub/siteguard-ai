@@ -48,10 +48,10 @@ export default async function Dashboard({
         </Link>
         <p className="eyebrow">WORKSPACE</p>
         <Link className="nav-active" href="/dashboard">
-          ▦ Overview
+          Overview
         </Link>
-        <a href="#projects">▤ Projects</a>
-        <Link href="/onboarding">＋ New company</Link>
+        <a href="#projects">Projects</a>
+        <Link href="/onboarding">+ New company</Link>
         <div className="aside-bottom">
           <p>{user.email}</p>
           <form action={logout}>

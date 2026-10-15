@@ -56,10 +56,21 @@ test("signup, verified session, onboarding, project persistence, logout and pass
     .getByRole("button", { name: "Create account", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText("Check your email");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("verify your email");
   await page.goto(await emailLink("Confirm"));
   await expect(
     page.getByRole("heading", { name: "Create your company workspace" }),
   ).toBeVisible();
+  const sessionCookies = (await page.context().cookies()).filter((c) =>
+    c.name.includes("auth-token"),
+  );
+  expect(sessionCookies.length).toBeGreaterThan(0);
+  expect(
+    sessionCookies.every((c) => c.httpOnly && c.secure && c.sameSite === "Lax"),
+  ).toBe(true);
   await page
     .getByLabel("Company name")
     .fill(`Test Company ${testInfo.project.name}`);

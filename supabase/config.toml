@@ -44,6 +44,12 @@ enable_signup = true
 enable_anonymous_sign_ins = false
 minimum_password_length = 12
 
+[auth.rate_limit]
+# Local synthetic-account tests only; choose hosted limits separately.
+email_sent = 100
+sign_in_sign_ups = 30
+token_verifications = 30
+
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
