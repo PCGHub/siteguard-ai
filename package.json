@@ -1,0 +1,55 @@
+{
+  "name": "siteguard-ai",
+  "version": "0.1.0",
+  "description": "SiteGuard AI Enterprise Workplace Safety Intelligence   See the Hazard. Visualize the Solution. An intelligent, multi-company SaaS platform that transforms workplace photographs into preliminary hazard assessments, corrective-action guidance, visual safety proposals, and traceable HSE inspection records.",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "vitest run tests/database.test.ts",
+    "format": "prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PCGHub/siteguard-ai.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/PCGHub/siteguard-ai/issues"
+  },
+  "homepage": "https://github.com/PCGHub/siteguard-ai#readme",
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "next": "^16.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.2",
+    "prettier": "^3.9.10",
+    "supabase": "^2.121.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  },
+  "private": true,
+  "engines": {
+    "node": "24.x"
+  }
+}
