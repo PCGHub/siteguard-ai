@@ -28,3 +28,9 @@ AI processing is not implemented; no assessments or safety certifications are fa
 
 Report vulnerabilities privately to the repository owner; do not include credentials
 or private customer data in public issues.
+
+Authentication redirects require an explicit APP_ORIGIN. Request Host and forwarded
+headers do not supply redirect authority. Confirmations and recovery use token hashes
+with distinct allowed types; default PKCE code links are rejected with recovery guidance.
+Provider success/error responses and cookie handling are covered by stub-contract tests,
+but real staging email/session verification is still required before Phase 2.

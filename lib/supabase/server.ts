@@ -1,12 +1,18 @@
 import "server-only";
+import { appOrigin } from "@/lib/auth-origin";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { sessionCookieOptions } from "./cookies";
 export function configured() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  );
+  try {
+    appOrigin();
+    return Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    );
+  } catch {
+    return false;
+  }
 }
 export async function supabase() {
   if (!configured())

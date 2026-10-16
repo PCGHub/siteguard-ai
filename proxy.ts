@@ -25,6 +25,7 @@ export async function proxy(request: NextRequest) {
 }
 export const config = {
   matcher: [
+    "/resend-confirmation",
     "/dashboard/:path*",
     "/onboarding/:path*",
     "/reset-password",

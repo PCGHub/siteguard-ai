@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 // These minimal Supabase-owned schemas allow the real migration to run against
 // embedded PostgreSQL. They do not simulate Auth HTTP or Storage HTTP behavior.
@@ -30,9 +30,11 @@ beforeAll(async () => {
  alter table storage.objects enable row level security;
  grant select,insert,update,delete on storage.objects to authenticated;
  insert into auth.users values('${alice}'),('${bob}'),('${viewer}');`);
-  await db.exec(
-    readFileSync("supabase/migrations/202610150001_foundation.sql", "utf8"),
-  );
+  for (const file of readdirSync("supabase/migrations")
+    .filter((f) => f.endsWith(".sql"))
+    .sort()) {
+    await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
+  }
   orgA = (
     await asUser(alice, "select public.create_organization('Company A') as id")
   ).rows[0].id as string;
@@ -46,6 +48,34 @@ afterAll(async () => {
   await db?.close();
 });
 describe("PostgreSQL migration and tenant isolation", () => {
+  it("keeps privileged helper execution scoped after all migrations", async () => {
+    for (const signature of [
+      "public.create_organization(text)",
+      "public.is_member(uuid)",
+      "public.is_company_admin(uuid)",
+      "public.storage_org_member(text)",
+    ]) {
+      const result = await db.query<{ anon: boolean; authenticated: boolean }>(
+        `select has_function_privilege('anon','${signature}','execute') as anon, has_function_privilege('authenticated','${signature}','execute') as authenticated`,
+      );
+      expect(result.rows[0]).toEqual({ anon: false, authenticated: true });
+    }
+    const trigger = await db.query<{ allowed: boolean }>(
+      "select has_function_privilege('authenticated','public.audit_project_creation()','execute') as allowed",
+    );
+    expect(trigger.rows[0].allowed).toBe(false);
+    const definitions = await db.query<{
+      prosecdef: boolean;
+      proconfig: string[];
+    }>(
+      "select prosecdef,proconfig from pg_proc join pg_namespace on pg_namespace.oid=pronamespace where nspname='public' and proname in ('create_organization','is_member','is_company_admin','storage_org_member','audit_project_creation')",
+    );
+    expect(definitions.rows).toHaveLength(5);
+    for (const fn of definitions.rows) {
+      expect(fn.prosecdef).toBe(true);
+      expect(fn.proconfig).toContain('search_path=""');
+    }
+  });
   it("atomically creates company, admin membership, and audit event", async () => {
     const result = await asUser(
       alice,

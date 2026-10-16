@@ -1,14 +1,14 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { configured, supabase } from "@/lib/supabase/server";
-import { safeNext } from "@/lib/validation";
+
 export async function GET(request: NextRequest) {
   const token_hash = request.nextUrl.searchParams.get("token_hash"),
     type = request.nextUrl.searchParams.get("type");
   if (
     configured() &&
     token_hash &&
-    (type === "signup" || type === "recovery" || type === "email")
+    (type === "signup" || type === "recovery")
   ) {
     const db = await supabase();
     const { error } = await db.auth.verifyOtp({
@@ -22,14 +22,19 @@ export async function GET(request: NextRequest) {
           Location:
             type === "recovery"
               ? "/reset-password"
-              : safeNext(request.nextUrl.searchParams.get("next")),
+              : "/login?message=Email+confirmed.+Sign+in+to+continue.",
+          "Cache-Control": "private, no-store",
+          "Referrer-Policy": "no-referrer",
         },
       });
   }
   return new NextResponse(null, {
     status: 303,
     headers: {
-      Location: "/login?message=Confirmation+link+is+invalid+or+expired.",
+      Location:
+        "/login?message=Confirmation+link+is+invalid+or+expired.+Request+a+new+confirmation+email.",
+      "Cache-Control": "private, no-store",
+      "Referrer-Policy": "no-referrer",
     },
   });
 }

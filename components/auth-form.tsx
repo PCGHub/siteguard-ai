@@ -31,7 +31,8 @@ export function AuthForm({
         {!configured() ? (
           <p role="alert" className="notice">
             Supabase configuration is required. See README.md to connect a
-            development project.
+            development project. Set APP_ORIGIN to the exact application origin
+            as described there.
           </p>
         ) : (
           <form action={action}>
@@ -47,7 +48,7 @@ export function AuthForm({
                 />
               </label>
             )}
-            {mode !== "forgot" && (
+            {mode !== "forgot" && mode !== "resend" && (
               <label>
                 Password
                 <input
@@ -69,6 +70,7 @@ export function AuthForm({
           <Link href="/login">Sign in</Link>
           <Link href="/signup">Create account</Link>
           <Link href="/forgot-password">Reset password</Link>
+          <Link href="/resend-confirmation">Resend confirmation</Link>
         </nav>
       </section>
     </main>

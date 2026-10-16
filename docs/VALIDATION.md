@@ -1,63 +1,75 @@
-# Validation report
+# Phase 1.5 validation report
 
-## Current runner
+## Latest local results
 
-- Node.js 24.19.0, Next.js 16.4.2, React 19.3.1, TypeScript 6.0.3.
-- `npm ci --cache /workspace/.npm`: passed from the committed lockfile.
-- `npm run lint`: passed.
-- `npm run typecheck`: passed.
-- `npm test`: 24 passed (7 validation + 17 PostgreSQL migration/RLS tests).
-- `npm run build`: passed, including framework type checking.
-- `npm run test:e2e` with system Chromium: 6 passed, 0 skipped; desktop and mobile.
-  These public tests ran against the production build with no Supabase bindings.
-- `npm audit --omit=dev --audit-level=high`: 0 known runtime vulnerabilities.
-- Full local Supabase browser acceptance: **unrun (2 test cases)**. Local stack startup is blocked by the runner storage capability described below.
+| Check                                                                          | Result                                         |
+| ------------------------------------------------------------------------------ | ---------------------------------------------- |
+| ESLint                                                                         | Passed                                         |
+| TypeScript                                                                     | Passed                                         |
+| Next.js production build                                                       | Passed                                         |
+| Unit/database/SDK-contract suite                                               | 46 passed, 0 failed                            |
+| Production-build desktop/mobile browser suite                                  | 12 passed, 0 failed, 0 skipped                 |
+| Real staging registration → email → confirmation → login → dashboard           | **Not executed: access/configuration blocked** |
+| Real staging recovery, reuse/expiry and persisted organization/project journey | **Not executed: same blocker**                 |
+| Vercel READY status, environment values, build logs                            | **Not verified: provider access denied**       |
+| Live database advisor/security scan                                            | **Not executed: no management credential**     |
 
-The migration was executed in embedded PostgreSQL (PGlite), with minimal test fixtures
-for Supabase-owned auth/storage schemas. Tests exercise grants, RLS, organization
-creation, project creation/persistence, audit events, role escalation denial,
-cross-tenant read/write/delete denial and private storage-object isolation.
-They do not establish that a hosted Supabase project's Auth or Storage HTTP APIs work.
+The 46 tests comprise 7 existing input-validation tests, 11 trusted-origin tests,
+10 integration/contract tests using the real Supabase SDK against a **stub provider**,
+and 18 embedded PostgreSQL migration/RLS tests. The stub tests verify real SDK request
+serialization, token-hash callback handling, secure-cookie writes, replay/error paths,
+login sequencing and trusted redirects. They do **not** prove real provider behavior,
+SMTP delivery, hosted session persistence or staging readiness.
 
-## Diagnosed setup failures
+PostgreSQL tests now execute **both** existing migrations in order, including
+`202610160001_restrict_privileged_function_execute.sql`. The security migration and
+all original database definitions were preserved. Tests verify tenant read/write/delete
+isolation, role-escalation denial, private storage policy, transactional onboarding,
+immutable audit events, anonymous denial and the intended authenticated definer grants.
+PGlite uses minimal auth/storage fixtures, not Supabase HTTP services.
 
-- npm's default home cache is unwritable; workspace cache resolved installation.
-- Latest Supabase CLI cannot initialize its configuration in the read-only home.
-  A standalone 2.75.0 binary was fetched from the official release with SHA-256
-  verified against the official release checksum file. No verification was disabled.
-- Default Supabase ECR registry was denied; Docker Hub access works.
-- Full optional-service downloads exhausted disk and interrupted one test run.
-  Removed images/cache downloaded during this task and reduced local services;
-  the interrupted tests and build subsequently passed. A second attempt confirmed
-  Docker uses the `vfs` driver, duplicating the official PostgreSQL image layers
-  until the 32 GB disk filled again. Stopped startup and removed these task-owned
-  images, restoring 25 GB free. Full Auth/Storage HTTP validation needs an approved
-  hosted development project or a runner with a suitable storage driver/disk.
-- Browser tests initially exposed an absolute redirect using the wildcard bind host;
-  confirmation responses now use fixed relative destinations. Rerun passed.
-- A development-server restart during a test run interrupted navigation; final public
-  browser checks use a stable production build and passed.
+The 12 Chromium browser tests ran on desktop and mobile against the current local
+production build without real Supabase bindings. They verify public navigation,
+configuration guidance, protected dashboard denial, invalid confirmations, retired
+root/callback code stripping and responsive confirmation-resend entry.
 
-## External access and approval boundaries
+Initial contract tests expected redirect metadata in the JSON body; the installed SDK
+correctly sends it as `redirect_to` in the query string. Assertions were corrected to
+inspect the actual SDK request. Initial browser tests found that Next.js Proxy requires
+absolute redirect locations. Retired-link handling was moved to the landing Server
+Component and callback Route Handler, keeping fixed relative destinations and no
+trust in request Host headers. All affected tests passed on rerun.
 
-GitHub repository reads and dry-run branch push succeeded. The branch was committed and pushed successfully. GitHub GraphQL rejected
-`gh pr create` with Forbidden; **no pull request was created**. The review description
-is saved in docs/PR_DESCRIPTION.md. No usable Supabase or
-Vercel bindings are injected; management API requests are blocked by network access.
-Official hosted documentation was also denied by the network policy; bundled Next.js
-API/auth documentation and installed SDK types were consulted.
+## External evidence and remaining blockers
 
-No hosted project was created, no remote migration applied, no Vercel deployment
-performed, and no production credentials used. Owner action is required to select an
-isolated development Supabase project, apply/review its migration, configure Auth/email,
-and import the repository into an approved Vercel team with Preview variables.
-Production deployment and production credential use require separate explicit approval.
+- Fetched and fast-forwarded `dev/foundation` to user-provided commit `87c170e` before
+  editing. Draft PR #1 is open against main. GitHub API and Git reads now work.
+- GitHub's existing `validate` check for `87c170e` succeeded. This is baseline evidence,
+  not a claim about a later deployment or this repair's new remote CI run.
+- The supplied staging host and development Supabase project host returned CONNECT
+  tunnel 403. No readiness claim is made for the supplied deployment URL.
+- Supabase management API returned HTTP 401 without credentials. Vercel API returned
+  HTTP 403. No usable Supabase/Vercel bindings or application public key are injected.
+- No live Auth Site URL, email template, Vercel variable or provider setting was read
+  or changed. The localhost/default-PKCE mismatch is diagnosed from the reported URL
+  and repository behavior; the live dashboard fields still need inspection.
+- No Docker stack retry was performed: the earlier confirmed vfs/32 GB disk limitation
+  remains documented. Two guarded local full-journey browser cases remain unrun.
 
-GitHub Actions configuration exists but its remote execution is not claimed here.
+Saved **draft** requirements: APP_ORIGIN, the exact development Supabase URL, the two
+approved staging/project host additions, and secure SUPABASE_ACCESS_TOKEN / VERCEL_TOKEN
+bindings for management inspection. Supabase publishable-key entry remains required.
+No credential values were saved in source or chat. Saving the draft does not apply it,
+configure either provider, or publish an environment. Review/save changes in environment
+settings; publish only when the desired environment capabilities are acceptable.
 
-Cloud configuration draft saved: reproducible npm install script, startup instructions,
-and the two public Supabase variable requirements. Requested custom network additions
-are api.github.com, api.supabase.com, api.vercel.com, nextjs.org, supabase.com and vercel.com.
-These draft changes are not applied or published. Review/save them in environment
-settings, then publish the environment when its intended capabilities are acceptable.
-The authenticated development workflow is not yet validated or ready.
+## Before Phase 2
+
+Follow [AUTH_STAGING.md](AUTH_STAGING.md): identify a READY deployment/stable alias of
+the repaired development commit, set APP_ORIGIN and the development public variables,
+update the development project's Site URL/redirect allowlist and both token-hash email
+templates, then request a fresh confirmation email and run the real full journey.
+
+No production credentials, production deployment, merge to main, or unrelated Supabase
+project changes are authorized or performed. **Phase 2 remains blocked until real
+registration, email confirmation, login and dashboard acceptance is verified.**

@@ -1,6 +1,8 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { confirmationRedirect } from "@/lib/auth-origin";
+import { z } from "zod";
 import { supabase } from "@/lib/supabase/server";
 import { credentials, organizationInput, projectInput } from "@/lib/validation";
 function fail(path: string, message: string): never {
@@ -24,13 +26,17 @@ export async function signup(form: FormData) {
   if (!result.success)
     fail("/signup", "Use a valid email and a password of 12–128 characters.");
   const db = await supabase();
-  const { error } = await db.auth.signUp(result.data);
+  const { error } = await db.auth.signUp({
+    ...result.data,
+    options: { emailRedirectTo: confirmationRedirect() },
+  });
   if (error) fail("/signup", "Unable to register. Try again later.");
   fail("/login", "Check your email to confirm your account before signing in.");
 }
 export async function logout() {
   const db = await supabase();
-  await db.auth.signOut();
+  const { error } = await db.auth.signOut();
+  if (error) fail("/dashboard", "Sign-out failed. Please try again.");
   redirect("/login");
 }
 export async function requestReset(form: FormData) {
@@ -38,7 +44,14 @@ export async function requestReset(form: FormData) {
   const email = String(form.get("email") ?? "");
   if (!/^\S+@\S+\.\S+$/.test(email))
     fail("/forgot-password", "Enter a valid email.");
-  await db.auth.resetPasswordForEmail(email);
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: confirmationRedirect(),
+  });
+  if (error)
+    fail(
+      "/forgot-password",
+      "Unable to request recovery right now. Please try again later.",
+    );
   fail(
     "/forgot-password",
     "If this account exists, a recovery email has been sent.",
@@ -96,4 +109,25 @@ export async function createProject(form: FormData) {
     );
   revalidatePath("/dashboard");
   redirect("/dashboard");
+}
+
+export async function resendConfirmation(form: FormData) {
+  const email = z.email().max(254).safeParse(form.get("email"));
+  if (!email.success)
+    fail("/resend-confirmation", "Enter a valid email address.");
+  const db = await supabase();
+  const { error } = await db.auth.resend({
+    type: "signup",
+    email: email.data,
+    options: { emailRedirectTo: confirmationRedirect() },
+  });
+  if (error)
+    fail(
+      "/resend-confirmation",
+      "Unable to request confirmation right now. Please try again later.",
+    );
+  fail(
+    "/resend-confirmation",
+    "If this account is awaiting confirmation, a new email has been requested. Use the newest email.",
+  );
 }

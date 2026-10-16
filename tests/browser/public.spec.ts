@@ -38,3 +38,37 @@ test("invalid email confirmations fail safely", async ({ page }) => {
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole("status")).toContainText("invalid or expired");
 });
+test("retired root authorization codes are removed and explained", async ({
+  page,
+}) => {
+  await page.goto("/?code=fixture-retired-code");
+  await expect(page).toHaveURL(/\/login\?message=/);
+  await expect(page.getByRole("status")).toContainText("unsupported format");
+  expect(page.url()).not.toContain("fixture-retired-code");
+});
+test("retired callback cannot redirect to an attacker", async ({ page }) => {
+  await page.goto(
+    "/auth/callback?code=fixture-retired-code&next=https://evil.example",
+  );
+  await expect(page).toHaveURL(/\/login\?message=/);
+  await expect(page.getByRole("status")).toContainText(
+    "Request a new confirmation",
+  );
+  expect(page.url()).not.toContain("fixture-retired-code");
+});
+test("confirmation resend has a clear responsive entry point", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page
+    .getByRole("link", { name: "Resend confirmation", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Resend confirmation email" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

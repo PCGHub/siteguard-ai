@@ -1,5 +1,14 @@
 import Link from "next/link";
-export default function Home() {
+import { redirect } from "next/navigation";
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  if ((await searchParams).code !== undefined)
+    redirect(
+      "/login?message=This+link+uses+an+unsupported+format.+Request+a+new+confirmation+email,+or+sign+in+if+already+verified.",
+    );
   return (
     <>
       <header className="public-header">

@@ -61,6 +61,10 @@ test("signup, verified session, onboarding, project persistence, logout and pass
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("verify your email");
   await page.goto(await emailLink("Confirm"));
+  await expect(page.getByRole("status")).toContainText("Email confirmed");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Create your company workspace" }),
   ).toBeVisible();

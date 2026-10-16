@@ -19,7 +19,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` using
+Set `APP_ORIGIN` to your exact application origin (local: `http://127.0.0.1:3000`). Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` using
 Supabase Project Settings → API. These are public identifiers, not privileged
 credentials; authorization is enforced by PostgreSQL RLS. Never put a secret or
 service-role key in a `NEXT_PUBLIC_` variable.
@@ -38,9 +38,9 @@ service-role key in a `NEXT_PUBLIC_` variable.
 4. Set Auth Site URL to the exact app origin (local development uses
    `http://127.0.0.1:3000`). Restrict redirect URLs to owned origins.
 5. Copy `supabase/templates/confirmation.html` and `recovery.html` into the matching
-   Auth email templates. Their token-hash links use `/auth/confirm`, which establishes
+   Auth email templates. Their token-hash links use the explicit `RedirectTo` pointing at `/auth/confirm`, which establishes
    the cookie session server-side. Default fragment-based templates are not supported.
-6. Add the two public environment variables, restart Next.js, then register, confirm
+6. Add the two public environment variables and server-only `APP_ORIGIN`, restart Next.js, then register, confirm
    email, create a workspace, and create a project. Refresh to verify persistence.
 
 ### Local Supabase
@@ -85,7 +85,7 @@ For system Chromium set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to its executable 
 
 Import `PCGHub/siteguard-ai` into Vercel with the **Next.js** framework preset and
 Node.js 24. The committed `vercel.json` selects `npm run build` and `npm ci`. Add the two
-Supabase variables to **Preview** using a separate development Supabase project.
+Supabase variables and server-only `APP_ORIGIN` to **Preview** using a separate development Supabase project.
 Do not point previews at production customer data. Set the Supabase Auth Site URL
 and templates for the chosen stable preview URL. Arbitrary preview hostnames are
 not enabled automatically. No Vercel token is stored in this repository.
@@ -109,3 +109,5 @@ This creates synthetic accounts in local Supabase and reads only their confirmat
 and recovery messages from local Mailpit. It tests verification, login/logout,
 onboarding, project creation, refresh persistence, password recovery, and mobile
 layout. It must not be pointed at a hosted or production project.
+
+For the Phase 1.5 redirect repair, exact development-project settings and the live acceptance gate, see [docs/AUTH_STAGING.md](docs/AUTH_STAGING.md). Do not begin Phase 2 until the real email-to-dashboard journey passes.
