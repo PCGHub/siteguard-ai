@@ -134,3 +134,52 @@ and `SUPABASE_ACCESS_TOKEN`; the application's public key must also be made avai
 to this runner as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. A key configured only in
 Vercel is not automatically available here. Never paste these values or confirmation
 URLs in chat. Do not use production credentials.
+
+## Repaired deployment gate and connected-tool boundaries
+
+The owner independently verified that the existing protected deployment is READY
+but contains **87c170e**. That is not the repaired application. Do not point the repaired
+flow at that immutable deployment URL. Obtain a protected **Preview** of `dev/foundation`
+containing **5d45bbf or a later descendant**, and record its full deployed SHA.
+
+Repository inspection, fixes, local tests, commits, pushes and PR updates can run
+through the current GitHub access. Provider changes cannot: management credentials
+are not injected here, and current read-only API checks return Supabase 401 / Vercel 403. No new Supabase project or production deployment is needed.
+
+Recommended operator order:
+
+1. Select a stable protected staging/branch alias belonging to `siteguard-ai-dev`.
+   Configure **Preview** `APP_ORIGIN` to that exact HTTPS origin, alongside the existing
+   development Supabase URL and publishable key. Do not use an old immutable URL.
+2. Create a new **Preview** from `dev/foundation` containing `5d45bbf` or later, keeping
+   authentication protection on. Do not redeploy the old `87c170e` source and do not
+   select a Production target. GitHub push alone does not prove Vercel deployed it.
+3. Verify **READY**, exact deployed SHA, project identity and alias assignment. Only
+   then apply the Site URL, exact callback allowlist and the two committed token-hash
+   email templates to the existing development Supabase project as described above.
+4. Run metadata preflight and then the real email-to-dashboard/recovery acceptance.
+
+A new read-only command is available:
+
+```sh
+npm run staging:check
+```
+
+It requires secure `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`, and operator-chosen
+`APP_ORIGIN`. It defaults to the current full Git HEAD; `EXPECTED_STAGING_COMMIT` can
+select a specific full SHA. The CLI rejects commits that do not include `5d45bbf`.
+If Vercel requires an explicit team scope, set non-secret `VERCEL_TEAM_ID` as well.
+All provider calls are GET requests restricted to the existing development projects.
+No deployment, setting change, key creation, merge or production write is performed.
+Missing configuration exits 2; a failed/incomplete gate exits 1.
+
+The command checks READY state, exact SHA, Preview target, approved project, alias,
+protection metadata, Preview variable **names**, and Supabase Site URL, exact redirect,
+confirmation requirement and token-hash templates. Vercel variable **values are not
+inspected**: the deployment's actual Supabase URL/key and APP_ORIGIN still need secure
+operator validation. Neither a green metadata check nor its fixture tests prove real
+email delivery, provider sessions or the acceptance journey.
+
+For protected browser acceptance, supply `VERCEL_AUTOMATION_BYPASS_SECRET` through
+secure settings for the selected approved host; do not disable protection. A new
+stable hostname must be explicitly allowed for that secret before using it there.

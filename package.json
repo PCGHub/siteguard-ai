@@ -13,7 +13,8 @@
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:test": "vitest run tests/database.test.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "staging:check": "node --use-env-proxy scripts/staging-preflight.mjs"
   },
   "repository": {
     "type": "git",

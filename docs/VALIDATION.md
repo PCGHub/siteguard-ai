@@ -7,16 +7,16 @@
 | ESLint                                                                         | Passed                                         |
 | TypeScript                                                                     | Passed                                         |
 | Next.js production build                                                       | Passed                                         |
-| Unit/database/SDK-contract suite                                               | 46 passed, 0 failed                            |
+| Unit/database/SDK-contract suite                                               | 57 passed, 0 failed                            |
 | Production-build desktop/mobile browser suite                                  | 12 passed, 0 failed, 0 skipped                 |
 | Real staging registration → email → confirmation → login → dashboard           | **Not executed: access/configuration blocked** |
 | Real staging recovery, reuse/expiry and persisted organization/project journey | **Not executed: same blocker**                 |
 | Vercel READY status, environment values, build logs                            | **Not verified: provider access denied**       |
 | Live database advisor/security scan                                            | **Not executed: no management credential**     |
 
-The 46 tests comprise 7 existing input-validation tests, 11 trusted-origin tests,
+The 57 tests comprise 7 existing input-validation tests, 11 trusted-origin tests,
 10 integration/contract tests using the real Supabase SDK against a **stub provider**,
-and 18 embedded PostgreSQL migration/RLS tests. The stub tests verify real SDK request
+18 embedded PostgreSQL migration/RLS tests, and 11 staging-readiness metadata fixture tests. The stub tests verify real SDK request
 serialization, token-hash callback handling, secure-cookie writes, replay/error paths,
 login sequencing and trusted redirects. They do **not** prove real provider behavior,
 SMTP delivery, hosted session persistence or staging readiness.
@@ -89,3 +89,15 @@ These requirements are saved as a draft for secure entry/review. No credential
 values were requested in chat or inferred from the other providers. Supabase and
 Vercel management requests still return 401 and 403 respectively; exact Site URL,
 email templates, READY state and real user journey remain unverified.
+
+## Latest deployment preparation
+
+The owner confirms that the existing READY staging deployment is still commit
+87c170e, not the repair. This is owner-supplied evidence; the runner still cannot
+inspect Vercel deployment metadata. The new read-only `npm run staging:check` exits
+2 with the exact missing setting names (`VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`,
+`APP_ORIGIN`) and makes no provider calls when those settings are absent. Its 11
+fixture tests cover older commits, non-READY/Production targets, wrong projects and
+aliases, disabled protection, missing Preview variables and incorrect Auth templates.
+The full suite now has 57 passing tests; lint, typecheck and build passed. This is
+not evidence of a newly READY deployment or real staging authentication.
