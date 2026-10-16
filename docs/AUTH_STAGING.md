@@ -183,3 +183,8 @@ email delivery, provider sessions or the acceptance journey.
 For protected browser acceptance, supply `VERCEL_AUTOMATION_BYPASS_SECRET` through
 secure settings for the selected approved host; do not disable protection. A new
 stable hostname must be explicitly allowed for that secret before using it there.
+
+For a dashboard-driven route that needs **no management tokens**, plus precise
+capability boundaries and secure credential configuration if management is delegated,
+see [STAGING_OPERATOR_HANDOFF.md](STAGING_OPERATOR_HANDOFF.md). Existing Vercel public
+variables do not need to be exported into Codex to test the hosted app in a browser.

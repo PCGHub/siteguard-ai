@@ -101,3 +101,18 @@ fixture tests cover older commits, non-READY/Production targets, wrong projects 
 aliases, disabled protection, missing Preview variables and incorrect Auth templates.
 The full suite now has 57 passing tests; lint, typecheck and build passed. This is
 not evidence of a newly READY deployment or real staging authentication.
+
+## Connected-service recheck and minimum-access option
+
+GitHub CI for cc83340 completed successfully. Accessible GitHub deployment records
+and commit deployment statuses are empty, there are no Vercel PR bot comments, and
+the sole accessible workflow is Validate (no deployment job). Webhook and repository
+secret metadata return integration permission errors. No Vercel/Supabase connector
+is exposed. Management API rechecks still return Vercel 403 / Supabase 401; the known
+app host redirects to Vercel SSO. No repaired READY deployment has been verified.
+
+Management tokens are optional: the owner can use the existing provider dashboards
+following [STAGING_OPERATOR_HANDOFF.md](STAGING_OPERATOR_HANDOFF.md). Agent-operated
+management needs narrowly authorized provider access; protected hosted browser testing
+needs authorized staging machine access, not a copy of Vercel's public key. No new
+tests or code changes were necessary for this documentation-only capability audit.
