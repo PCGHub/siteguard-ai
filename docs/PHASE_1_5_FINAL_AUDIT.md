@@ -1,5 +1,9 @@
 # Phase 1.5 final staging audit
 
+> Historical audit of the token-hash-only implementation. The subsequent
+> default-email repair supersedes its template and PKCE guidance; see
+> [current authentication instructions](AUTH_STAGING.md). Live acceptance remains required.
+
 Audit date: 2026-10-16. Repository: PCGHub/siteguard-ai. Development branch: dev/foundation.
 
 ## Decision

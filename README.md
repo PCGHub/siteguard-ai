@@ -26,7 +26,7 @@ service-role key in a `NEXT_PUBLIC_` variable.
 
 ## Configure Supabase (development only)
 
-1. Create/select an isolated development Supabase project, not production.
+1. Use the existing development Supabase project `qaguumtcsshopfeyflrp`, not production.
 2. Apply `supabase/migrations/202610150001_foundation.sql` with the SQL editor,
    or link the CLI to that development project and run `supabase db push` after
    reviewing the target and migration. Do not run remote migrations without the
@@ -37,9 +37,15 @@ service-role key in a `NEXT_PUBLIC_` variable.
    registration if abuse protection is required; the app currently has no CAPTCHA UI.
 4. Set Auth Site URL to the exact app origin (local development uses
    `http://127.0.0.1:3000`). Restrict redirect URLs to owned origins.
-5. Copy `supabase/templates/confirmation.html` and `recovery.html` into the matching
-   Auth email templates. Their token-hash links use the explicit `RedirectTo` pointing at `/auth/confirm`, which establishes
-   the cookie session server-side. Default fragment-based templates are not supported.
+5. Keep Supabase's default confirmation/recovery templates (`ConfirmationURL`).
+   Signup, resend and recovery initiate PKCE and explicitly redirect to
+   `<APP_ORIGIN>/auth/confirm`. Open the latest email in the same browser/profile
+   that requested it so the server can exchange the code using its HttpOnly verifier
+   cookie. No custom SMTP or template editing is required for development. Built-in
+   email is limited to Supabase team addresses and currently two messages/hour;
+   see [development email acceptance](docs/AUTH_STAGING.md).
+   Optional custom token-hash templates in `supabase/templates/` remain supported.
+   Old implicit fragment links are not imported into sessions; request a fresh email.
 6. Add the two public environment variables and server-only `APP_ORIGIN`, restart Next.js, then register, confirm
    email, create a workspace, and create a project. Refresh to verify persistence.
 

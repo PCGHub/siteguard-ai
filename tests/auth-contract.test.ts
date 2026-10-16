@@ -15,6 +15,7 @@ const fixture = vi.hoisted(() => ({
     body: Record<string, unknown>;
   }[],
   confirmed: false,
+  challenge: "",
 }));
 vi.mock("@/lib/supabase/server", async () => {
   const { createServerClient } = await import("@supabase/ssr");
@@ -59,6 +60,32 @@ vi.mock("@/lib/supabase/server", async () => {
               app_metadata: {},
               user_metadata: {},
             };
+            if (
+              [
+                "/auth/v1/signup",
+                "/auth/v1/resend",
+                "/auth/v1/recover",
+              ].includes(url.pathname)
+            )
+              fixture.challenge = body.code_challenge ?? "";
+            if (url.searchParams.get("grant_type") === "pkce") {
+              const { createHash } = await import("node:crypto");
+              const challenge = createHash("sha256")
+                .update(body.code_verifier ?? "")
+                .digest("base64url");
+              if (
+                body.auth_code !== "fixture-pkce-code" ||
+                !fixture.challenge ||
+                challenge !== fixture.challenge ||
+                fixture.used
+              )
+                return Response.json(
+                  { code: "flow_state_not_found", msg: "Invalid flow" },
+                  { status: 400 },
+                );
+              fixture.used = true;
+              fixture.confirmed = true;
+            }
             if (url.pathname.endsWith("/user")) return Response.json(user);
             if (url.pathname.endsWith("/logout"))
               return new Response(null, { status: 204 });
@@ -105,12 +132,14 @@ vi.mock("@/lib/supabase/server", async () => {
   };
 });
 import { GET } from "../app/auth/confirm/route";
+import { GET as callback } from "../app/auth/callback/route";
 import {
   signup,
   login,
   requestReset,
   resendConfirmation,
   resetPassword,
+  logout,
 } from "../app/actions";
 function form(values: Record<string, string>) {
   const result = new FormData();
@@ -124,6 +153,7 @@ beforeEach(() => {
   fixture.confirmed = false;
   fixture.configured = true;
   fixture.failPath = "";
+  fixture.challenge = "";
   vi.stubEnv("APP_ORIGIN", "https://staging.example.com");
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -145,6 +175,176 @@ describe("auth SDK and callback contract (stub provider)", () => {
       "https://staging.example.com/auth/confirm",
     );
   });
+  it.each(["signup", "resend", "recovery"])(
+    "default email %s uses PKCE and establishes a secure session",
+    async (flow) => {
+      const action =
+        flow === "signup"
+          ? signup
+          : flow === "resend"
+            ? resendConfirmation
+            : requestReset;
+      await expect(
+        action(
+          form({
+            email: "fixture@example.test",
+            password: "fixture-password-only",
+          }),
+        ),
+      ).rejects.toThrow("NEXT_REDIRECT");
+      expect(fixture.requests[0].body.code_challenge_method).toBe("s256");
+      expect(fixture.challenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(
+        [...fixture.cookies.values()].some(
+          (c) => c.name.includes("code-verifier") && c.options.httpOnly,
+        ),
+      ).toBe(true);
+      const response = await GET(
+        new NextRequest(
+          "https://staging.example.com/auth/confirm?code=fixture-pkce-code&type=" +
+            (flow === "recovery" ? "signup" : "recovery") +
+            "&next=https://evil.example",
+        ),
+      );
+      expect(response.headers.get("location")).toBe(
+        flow === "recovery"
+          ? "/reset-password"
+          : "/login?message=Email+confirmed.+Sign+in+to+continue.",
+      );
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+      const sessionCookies = [...fixture.cookies.values()].filter(
+        (c) => c.value && !c.name.includes("code-verifier"),
+      );
+      expect(sessionCookies.length).toBeGreaterThan(0);
+      expect(
+        sessionCookies.every(
+          (c) =>
+            c.options.httpOnly &&
+            c.options.secure &&
+            c.options.sameSite === "lax",
+        ),
+      ).toBe(true);
+      expect(
+        fixture.requests.find((r) => r.body.auth_code === "fixture-pkce-code")
+          ?.body.code_verifier,
+      ).toBeTruthy();
+      if (flow === "recovery") {
+        await expect(
+          resetPassword(form({ password: "fixture-new-password-only" })),
+        ).rejects.toThrow("NEXT_REDIRECT");
+      } else {
+        await expect(logout()).rejects.toThrow("NEXT_REDIRECT");
+        await expect(
+          login(
+            form({
+              email: "fixture@example.test",
+              password: "fixture-password-only",
+            }),
+          ),
+        ).rejects.toThrow("NEXT_REDIRECT");
+      }
+    },
+  );
+  it("uses the exact SDK flow slot when an explicit flow ID is supplied", async () => {
+    await expect(
+      requestReset(form({ email: "fixture@example.test" })),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    const flowId = [...fixture.cookies.keys()]
+      .map((k) => k.match(/-flow-([a-f0-9]{32})-code-verifier/)?.[1])
+      .find(Boolean);
+    expect(flowId).toBeTruthy();
+    const response = await GET(
+      new NextRequest(
+        `https://staging.example.com/auth/confirm?code=fixture-pkce-code&sb_flow_id=${flowId}`,
+      ),
+    );
+    expect(response.headers.get("location")).toBe("/reset-password");
+  });
+  it("does not borrow the legacy verifier for an unknown explicit flow slot", async () => {
+    await expect(
+      requestReset(form({ email: "fixture@example.test" })),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    fixture.requests = [];
+    const response = await GET(
+      new NextRequest(
+        "https://staging.example.com/auth/confirm?code=fixture-pkce-code&sb_flow_id=" +
+          "f".repeat(32),
+      ),
+    );
+    expect(response.headers.get("location")).toContain("invalid+or+expired");
+    expect(fixture.requests).toHaveLength(0);
+  });
+  it("default email code fails closed in another browser without the verifier", async () => {
+    await expect(
+      requestReset(form({ email: "fixture@example.test" })),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    fixture.cookies.clear();
+    fixture.requests = [];
+    const response = await GET(
+      new NextRequest(
+        "https://staging.example.com/auth/confirm?code=fixture-pkce-code",
+      ),
+    );
+    expect(response.headers.get("location")).toContain("same+browser");
+    expect(fixture.requests).toHaveLength(0);
+    expect([...fixture.cookies.values()].filter((c) => c.value)).toHaveLength(
+      0,
+    );
+  });
+  it.each(["expired", "reused", "mismatched"])(
+    "rejects a %s PKCE code without creating a new session",
+    async (reason) => {
+      await expect(
+        requestReset(form({ email: "fixture@example.test" })),
+      ).rejects.toThrow("NEXT_REDIRECT");
+      if (reason === "expired") fixture.failPath = "/auth/v1/token";
+      if (reason === "reused") fixture.used = true;
+      if (reason === "mismatched")
+        fixture.challenge = "not-the-requested-challenge";
+      const response = await callback(
+        new NextRequest(
+          "https://staging.example.com/auth/callback?code=fixture-pkce-code&next=//evil.example",
+        ),
+      );
+      expect(response.headers.get("location")).toContain("invalid+or+expired");
+      expect(
+        [...fixture.cookies.values()].filter(
+          (c) => c.value && !c.name.includes("code-verifier"),
+        ),
+      ).toHaveLength(0);
+    },
+  );
+  it("compatibility callback exchanges a valid code with a fixed local destination", async () => {
+    await expect(
+      requestReset(form({ email: "fixture@example.test" })),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    const response = await callback(
+      new NextRequest(
+        "https://staging.example.com/auth/callback?code=fixture-pkce-code&next=https://evil.example",
+      ),
+    );
+    expect(response.headers.get("location")).toBe("/reset-password");
+  });
+  it.each([
+    "code=one&code=two",
+    "code=fixture-pkce-code&token_hash=fixture-token-hash&type=signup",
+    "code=fixture-pkce-code&error=access_denied",
+    "code=fixture-pkce-code&error_code=expired",
+    "code=fixture-pkce-code&sb_flow_id=invalid",
+    "code=%20invalid",
+    "code=" + "a".repeat(2049),
+    "token_hash=fixture-token-hash&type=signup&type=recovery",
+  ])(
+    "rejects ambiguous or malformed callback input without provider calls (%#)",
+    async (query) => {
+      const response = await GET(
+        new NextRequest("https://staging.example.com/auth/confirm?" + query),
+      );
+      expect(response.headers.get("location")).toContain("invalid+or+expired");
+      expect(fixture.requests).toHaveLength(0);
+    },
+  );
   it("verification uses token hash, writes secure session cookies, and leads to sign-in", async () => {
     const response = await GET(
       new NextRequest(
@@ -188,7 +388,7 @@ describe("auth SDK and callback contract (stub provider)", () => {
     expect(response.headers.get("location")).toBe("/reset-password");
     expect(fixture.cookies.size).toBeGreaterThan(0);
   });
-  it("rejects unsupported types and PKCE codes without exchanging them", async () => {
+  it("rejects unsupported token types and codes without a verifier", async () => {
     for (const query of [
       "code=fixture-code",
       "token_hash=fixture-token-hash&type=invite",

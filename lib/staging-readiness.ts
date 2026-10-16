@@ -32,9 +32,11 @@ export function inspectStaging(input: {
       : [];
   const template = (value: unknown, type: string) =>
     typeof value === "string" &&
-    /{{\s*\.RedirectTo\s*}}\?token_hash={{\s*\.TokenHash\s*}}/.test(value) &&
-    value.includes(`type=${type}`) &&
-    !value.includes(".ConfirmationURL");
+    (value.trim() === "" ||
+      /{{\s*\.ConfirmationURL\s*}}/.test(value) ||
+      (/{{\s*\.RedirectTo\s*}}\?token_hash={{\s*\.TokenHash\s*}}/.test(value) &&
+        value.includes(`type=${type}`) &&
+        !value.includes(".ConfirmationURL")));
   const hasPreviewVariable = (key: string) =>
     variables.some(
       (v) =>
@@ -96,11 +98,11 @@ export function inspectStaging(input: {
       passed: auth.mailer_autoconfirm === false,
     },
     {
-      name: "Signup template uses RedirectTo and token hash",
+      name: "Signup template supports default PKCE or token hash",
       passed: template(auth.mailer_templates_confirmation_content, "signup"),
     },
     {
-      name: "Recovery template uses RedirectTo and token hash",
+      name: "Recovery template supports default PKCE or token hash",
       passed: template(auth.mailer_templates_recovery_content, "recovery"),
     },
   ];

@@ -1,3 +1,6 @@
+> Current default-email repair validation is recorded below under “Default-email repair”.
+> Earlier entries describe historical code and do not establish live staging acceptance.
+
 # Phase 1.5 validation report
 
 ## Latest local results
@@ -116,3 +119,37 @@ following [STAGING_OPERATOR_HANDOFF.md](STAGING_OPERATOR_HANDOFF.md). Agent-oper
 management needs narrowly authorized provider access; protected hosted browser testing
 needs authorized staging machine access, not a copy of Vercel's public key. No new
 tests or code changes were necessary for this documentation-only capability audit.
+
+## Default-email repair
+
+The development-email repair adds PKCE exchange for Supabase's built-in
+ConfirmationURL links while preserving token-hash verification. It uses server-only
+HttpOnly session/verifier cookies, fixed local redirects and the SDK recovery marker;
+it does not accept implicit fragment sessions. The local Supabase config now uses
+default templates. Current operating instructions supersede historical template-only
+guidance above: [AUTH_STAGING.md](AUTH_STAGING.md).
+
+Final checks for this repair:
+
+- ESLint and TypeScript pass.
+- Vitest: 84 tests pass in five files. SDK contracts use a stub provider checking
+  actual challenge/verifier pairing, not real Supabase emails. Explicit flow-slot,
+  missing/mismatched verifier, expiry/replay, recovery routing, secure cookies,
+  token-hash compatibility and redirect rejection are covered.
+- Production build passes.
+- Desktop/mobile local production browser suite: 14 tests pass, none skipped, with
+  no live Supabase configuration. This does not test hosted email or a real session.
+- `git diff --check` passes.
+- Read-only staging preflight exits 2 for missing `VERCEL_TOKEN` and
+  `SUPABASE_ACCESS_TOKEN` (APP_ORIGIN supplied as non-secret staging origin).
+- Full local Supabase/Mailpit journey was not run; this runner's previously
+  diagnosed Docker disk limitation remains. No migrations or dependencies changed.
+
+No provider settings, infrastructure or production deployment were changed. Real
+staging registration, email receipt/confirmation, login, organization/project journey,
+logout and recovery remain unrun. Supabase default delivery requires an existing
+authorized team address and is currently limited to two emails/hour, best-effort.
+Use the same browser/profile and stable origin for request and confirmation; deploy
+this repair to protected staging first. No custom SMTP/domain purchase or management
+token is needed for owner-assisted browser acceptance. Record the live results before
+Phase 1.5 signoff; historical audit dependency/abuse-control findings remain open.

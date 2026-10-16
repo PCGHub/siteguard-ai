@@ -113,7 +113,7 @@ describe("staging metadata gate (fixtures, no live provider verification)", () =
         ?.passed,
     ).toBe(false);
   });
-  it("rejects default PKCE templates and auto-confirmed signup", () => {
+  it("accepts default PKCE templates but rejects auto-confirmed signup", () => {
     const f = fixture();
     f.auth.mailer_autoconfirm = true;
     f.auth.mailer_templates_confirmation_content = "{{ .ConfirmationURL }}";
@@ -124,7 +124,30 @@ describe("staging metadata gate (fixtures, no live provider verification)", () =
     ).toBe(false);
     expect(
       checks.find(
-        (c) => c.name === "Signup template uses RedirectTo and token hash",
+        (c) => c.name === "Signup template supports default PKCE or token hash",
+      )?.passed,
+    ).toBe(true);
+  });
+  it("accepts explicit built-in template defaults but not missing or unrelated content", () => {
+    const f = fixture();
+    f.auth.mailer_templates_confirmation_content = "";
+    f.auth.mailer_templates_recovery_content = "{{ .ConfirmationURL }}";
+    expect(inspectStaging(f).every((c) => c.passed)).toBe(true);
+    f.auth.mailer_templates_recovery_content = "https://evil.example";
+    expect(
+      inspectStaging(f).find(
+        (c) =>
+          c.name === "Recovery template supports default PKCE or token hash",
+      )?.passed,
+    ).toBe(false);
+  });
+  it("does not treat absent template metadata as verified defaults", () => {
+    const f = fixture();
+    Reflect.deleteProperty(f.auth, "mailer_templates_recovery_content");
+    expect(
+      inspectStaging(f).find(
+        (c) =>
+          c.name === "Recovery template supports default PKCE or token hash",
       )?.passed,
     ).toBe(false);
   });

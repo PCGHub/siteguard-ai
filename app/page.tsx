@@ -3,12 +3,27 @@ import { redirect } from "next/navigation";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if ((await searchParams).code !== undefined)
-    redirect(
-      "/login?message=This+link+uses+an+unsupported+format.+Request+a+new+confirmation+email,+or+sign+in+if+already+verified.",
-    );
+  const params = await searchParams;
+  if (params.code !== undefined) {
+    // Preserve credential ambiguity/errors for callback rejection; drop destinations.
+    const callback = new URLSearchParams();
+    for (const key of [
+      "code",
+      "token_hash",
+      "type",
+      "error",
+      "error_code",
+      "sb_flow_id",
+    ]) {
+      const value = params[key];
+      if (value !== undefined)
+        for (const item of Array.isArray(value) ? value : [value])
+          callback.append(key, item);
+    }
+    redirect(`/auth/confirm?${callback}`);
+  }
   return (
     <>
       <header className="public-header">

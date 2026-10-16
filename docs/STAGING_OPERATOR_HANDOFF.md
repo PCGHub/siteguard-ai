@@ -43,11 +43,13 @@ Supabase development project `qaguumtcsshopfeyflrp`. Keep production and main un
    - Redirect URL: exactly `<verified-origin>/auth/confirm`.
    - Keep explicit localhost callbacks only for intentional local development;
      avoid wildcard staging redirects.
-6. Apply `supabase/templates/confirmation.html` to **Confirm signup** and
-   `supabase/templates/recovery.html` to **Reset password**. They use `.RedirectTo`,
-   `.TokenHash`, and `type=signup` / `type=recovery`. Do not combine default
-   ConfirmationURL/PKCE templates with the token-hash callback. Require email
-   confirmation and minimum 12-character passwords.
+6. Keep the default Confirm signup and Reset password templates using
+   `.ConfirmationURL`. No custom SMTP or template editing is required for limited
+   development acceptance. Use an existing authorized Supabase team email address,
+   the same browser/profile for requesting and opening each email, and stay within
+   the built-in email quota. Optional custom token-hash templates remain supported.
+   Require email confirmation and minimum 12-character passwords. See
+   [current development email instructions](AUTH_STAGING.md).
 7. Share only the non-secret verified URL, full source SHA and READY result with
    Codex. Add the exact new hostname to this Codex environment's allowed destinations.
    For automated protected browser access, securely configure the project's supported

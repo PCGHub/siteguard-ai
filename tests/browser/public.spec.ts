@@ -38,22 +38,22 @@ test("invalid email confirmations fail safely", async ({ page }) => {
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole("status")).toContainText("invalid or expired");
 });
-test("retired root authorization codes are removed and explained", async ({
+test("root authorization codes without a verifier fail safely", async ({
   page,
 }) => {
   await page.goto("/?code=fixture-retired-code");
   await expect(page).toHaveURL(/\/login\?message=/);
-  await expect(page.getByRole("status")).toContainText("unsupported format");
+  await expect(page.getByRole("status")).toContainText("same browser");
   expect(page.url()).not.toContain("fixture-retired-code");
 });
-test("retired callback cannot redirect to an attacker", async ({ page }) => {
+test("callback without a verifier cannot redirect to an attacker", async ({
+  page,
+}) => {
   await page.goto(
     "/auth/callback?code=fixture-retired-code&next=https://evil.example",
   );
   await expect(page).toHaveURL(/\/login\?message=/);
-  await expect(page.getByRole("status")).toContainText(
-    "Request a new confirmation",
-  );
+  await expect(page.getByRole("status")).toContainText("invalid or expired");
   expect(page.url()).not.toContain("fixture-retired-code");
 });
 test("confirmation resend has a clear responsive entry point", async ({

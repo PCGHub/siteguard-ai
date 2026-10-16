@@ -20,7 +20,8 @@ Session cookies are HttpOnly, SameSite=Lax, and Secure in production. Auth token
 review before production. Basic anti-framing, no-referrer and nosniff headers are set.
 Error pages avoid returning database error detail. Public messages are React-escaped.
 Email links restrict their token type and post-auth destination; no arbitrary redirect
-is accepted. Configure exact owned Auth URLs and correct token-hash email templates.
+is accepted. Configure exact owned Auth URLs; default email templates and optional
+token-hash templates are supported.
 
 Private evidence reads are scoped by the organization path; uploads and downloads
 through the application are not implemented. No real photographs were used in tests.
@@ -30,7 +31,12 @@ Report vulnerabilities privately to the repository owner; do not include credent
 or private customer data in public issues.
 
 Authentication redirects require an explicit APP_ORIGIN. Request Host and forwarded
-headers do not supply redirect authority. Confirmations and recovery use token hashes
-with distinct allowed types; default PKCE code links are rejected with recovery guidance.
+headers do not supply redirect authority. Default email links use PKCE code exchange
+bound to the requesting browser's HttpOnly verifier cookie. Recovery intent comes
+from the SDK verifier marker, not a query parameter. Missing/mismatched verifiers,
+provider errors and ambiguous credentials fail closed. Optional token-hash links
+retain distinct signup/recovery types. Both flows redirect only to fixed local
+paths and never echo provider error details or tokens. Legacy implicit fragment
+sessions are not accepted; request fresh links from this app.
 Provider success/error responses and cookie handling are covered by stub-contract tests,
 but real staging email/session verification is still required before Phase 2.

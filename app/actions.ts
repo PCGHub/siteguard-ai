@@ -40,7 +40,10 @@ export async function signup(form: FormData) {
     options: { emailRedirectTo: confirmationRedirect() },
   });
   if (error) fail("/signup", "Unable to register. Try again later.");
-  fail("/login", "Check your email to confirm your account before signing in.");
+  fail(
+    "/login",
+    "Check your email to confirm your account before signing in. Open the latest email in this same browser.",
+  );
 }
 export async function logout() {
   const db = await supabase();
@@ -64,7 +67,7 @@ export async function requestReset(form: FormData) {
     );
   fail(
     "/forgot-password",
-    "If this account exists, a recovery email has been sent.",
+    "If this account exists, a recovery email has been sent. Open the latest email in this same browser.",
   );
 }
 export async function resetPassword(form: FormData) {
@@ -143,6 +146,6 @@ export async function resendConfirmation(form: FormData) {
     );
   fail(
     "/resend-confirmation",
-    "If this account is awaiting confirmation, a new email has been requested. Use the newest email.",
+    "If this account is awaiting confirmation, a new email has been requested. Open the newest email in this same browser.",
   );
 }

@@ -58,13 +58,8 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
-[auth.email.template.confirmation]
-subject = "Confirm your SiteGuard AI account"
-content_path = "./supabase/templates/confirmation.html"
-
-[auth.email.template.recovery]
-subject = "Reset your SiteGuard AI password"
-content_path = "./supabase/templates/recovery.html"
+# Use built-in ConfirmationURL templates to exercise the development PKCE flow.
+# Optional custom token-hash templates remain in supabase/templates/.
 
 [edge_runtime]
 enabled = false
