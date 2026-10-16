@@ -38,7 +38,7 @@ commit and build result. Prefer the project's verified stable staging/branch ali
 an immutable deployment URL from an older commit will keep serving older code.
 The supplied candidate was
 `https://siteguard-ai-21og14625-pcgrowthhub-2263s-projects.vercel.app`.
-This runner could not access it; its readiness and alias ownership are **unverified**.
+This runner now reaches it, but receives a redirect to Vercel SSO protection. Its READY state, deployed commit and alias ownership are **unverified**.
 
 Let `STAGING_ORIGIN` be that verified HTTPS origin, with no trailing slash. Set in
 Vercel's **Preview** environment for this development branch:
@@ -124,3 +124,13 @@ embedded PostgreSQL RLS tests. Neither is a real email/staging acceptance test.
 suite; it is **not** repurposed to create accounts on an arbitrary hosted project.
 Live staging acceptance remains blocked until the approved hosts, development public
 key and provider access are available. Phase 2 stays blocked until that gate passes.
+
+### Protected staging access
+
+Keep Vercel deployment protection enabled. For machine acceptance, securely provide
+the project's supported automation-bypass secret as `VERCEL_AUTOMATION_BYPASS_SECRET`,
+scoped to the approved staging host. Provider management access uses `VERCEL_TOKEN`
+and `SUPABASE_ACCESS_TOKEN`; the application's public key must also be made available
+to this runner as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. A key configured only in
+Vercel is not automatically available here. Never paste these values or confirmation
+URLs in chat. Do not use production credentials.

@@ -44,10 +44,8 @@ trust in request Host headers. All affected tests passed on rerun.
 
 - Fetched and fast-forwarded `dev/foundation` to user-provided commit `87c170e` before
   editing. Draft PR #1 is open against main. GitHub API and Git reads now work.
-- GitHub's existing `validate` check for `87c170e` succeeded. This is baseline evidence,
-  not a claim about a later deployment or this repair's new remote CI run.
-- The supplied staging host and development Supabase project host returned CONNECT
-  tunnel 403. No readiness claim is made for the supplied deployment URL.
+- GitHub Actions `validate` completed successfully for repair commit `e7c7b2a`. This proves repository CI, not a Vercel deployment or real email acceptance.
+- After the owner authorized the network additions, staging became reachable but returned HTTP 302 to Vercel SSO protection. The development Supabase Auth health endpoint returned HTTP 401 without a public key. These responses establish connectivity, not deployment READY status or application readiness.
 - Supabase management API returned HTTP 401 without credentials. Vercel API returned
   HTTP 403. No usable Supabase/Vercel bindings or application public key are injected.
 - No live Auth Site URL, email template, Vercel variable or provider setting was read
@@ -73,3 +71,21 @@ templates, then request a fresh confirmation email and run the real full journey
 No production credentials, production deployment, merge to main, or unrelated Supabase
 project changes are authorized or performed. **Phase 2 remains blocked until real
 registration, email confirmation, login and dashboard acceptance is verified.**
+
+## Access follow-up
+
+The owner's existing development infrastructure is the only authorized target. No
+new project is needed. A publishable key already set in Vercel does not inject that
+value into this cloud runner. The following secure environment entries are still
+absent here:
+
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: public key of the existing development project.
+- `SUPABASE_ACCESS_TOKEN`: authorized management access to inspect/update only the named development project.
+- `VERCEL_TOKEN`: authorized project/team access to inspect READY state, deployed commit, variable metadata and build logs.
+- `VERCEL_AUTOMATION_BYPASS_SECRET`: supported machine access for this protected staging deployment, if automated browser acceptance is to run here. Do not disable deployment protection.
+- `APP_ORIGIN`: the verified READY stable staging origin; do not select the older immutable candidate before its commit is checked.
+
+These requirements are saved as a draft for secure entry/review. No credential
+values were requested in chat or inferred from the other providers. Supabase and
+Vercel management requests still return 401 and 403 respectively; exact Site URL,
+email templates, READY state and real user journey remain unverified.
