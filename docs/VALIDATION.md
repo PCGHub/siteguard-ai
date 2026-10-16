@@ -153,3 +153,20 @@ Use the same browser/profile and stable origin for request and confirmation; dep
 this repair to protected staging first. No custom SMTP/domain purchase or management
 token is needed for owner-assisted browser acceptance. Record the live results before
 Phase 1.5 signoff; historical audit dependency/abuse-control findings remain open.
+
+
+## Final owner acceptance and permission review
+
+Owner-reported live browser successes are recorded individually in
+[PHASE_1_5_SIGN_OFF.md](PHASE_1_5_SIGN_OFF.md). They supersede earlier statements that
+the demonstrated browser journey remains unrun; Codex has not independently repeated
+those live tests. Direct hosted API/Storage negative tests remain unexecuted.
+
+Latest local checks: lint/typecheck pass; 93 tests pass, including 27 embedded
+PostgreSQL tests. New cases cover all non-admin roles, full tenant-table grants/RLS,
+membership revocation, two companies under one identity, wrong buckets/prefixes and
+own-company upload denial. Initial transaction-cleanup assertion failures in five
+new cases were corrected in the test harness; no application/policy fix was needed.
+Runtime dependency audit reports zero advisories; full audit still reports five High
+entries from the existing development-tool chain. No new build/browser result is
+claimed for this tests/documentation-only review.

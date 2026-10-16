@@ -1,5 +1,8 @@
 # Phase 1.5 final staging audit
 
+> Superseded acceptance status: see [Phase 1.5 sign-off review](PHASE_1_5_SIGN_OFF.md)
+> for owner-reported live successes, the latest SQL review and remaining release gates.
+
 > Historical audit of the token-hash-only implementation. The subsequent
 > default-email repair supersedes its template and PKCE guidance; see
 > [current authentication instructions](AUTH_STAGING.md). Live acceptance remains required.

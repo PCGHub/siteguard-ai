@@ -257,3 +257,168 @@ describe("PostgreSQL migration and tenant isolation", () => {
     });
   });
 });
+
+describe("final permission boundary review (embedded PostgreSQL, not hosted APIs)", () => {
+  it("enables RLS on every tenant table", async () => {
+    const result = await db.query<{ relname: string; relrowsecurity: boolean }>(
+      "select relname,relrowsecurity from pg_class join pg_namespace n on n.oid=relnamespace where n.nspname='public' and relname in ('organizations','organization_members','projects','audit_logs')",
+    );
+    expect(result.rows).toHaveLength(4);
+    expect(result.rows.every((r) => r.relrowsecurity)).toBe(true);
+  });
+  it("denies direct company/member/audit writes and all tenant-table deletes", async () => {
+    for (const table of [
+      "organizations",
+      "organization_members",
+      "projects",
+      "audit_logs",
+    ]) {
+      const result = await db.query<{
+        insert: boolean;
+        update: boolean;
+        delete: boolean;
+      }>(
+        `select has_table_privilege('authenticated','public.${table}','insert') as insert, has_table_privilege('authenticated','public.${table}','update') as update, has_table_privilege('authenticated','public.${table}','delete') as delete`,
+      );
+      expect(result.rows[0]).toEqual({
+        insert: table === "projects",
+        update: false,
+        delete: false,
+      });
+      for (const privilege of ["select", "insert", "update", "delete"]) {
+        const anon = await db.query<{ allowed: boolean }>(
+          `select has_table_privilege('anon','public.${table}','${privilege}') as allowed`,
+        );
+        expect(anon.rows[0].allowed).toBe(false);
+      }
+    }
+  });
+  it.each(["hse_manager", "hse_officer", "supervisor", "viewer"])(
+    "%s cannot write projects or read admin audit logs",
+    async (role) => {
+      await db.exec("begin");
+      try {
+        await db.exec(
+          `update public.organization_members set role='${role}' where user_id='${viewer}'`,
+        );
+        expect(
+          (
+            await asUser(
+              viewer,
+              `select * from public.projects where organization_id='${orgA}'`,
+            )
+          ).rows,
+        ).toHaveLength(1);
+        expect(
+          (await asUser(viewer, "select * from public.audit_logs")).rows,
+        ).toHaveLength(0);
+        // Assert the original policy denial before rolling back the failed transaction.
+        await db.exec(
+          `set role authenticated; select set_config('request.jwt.claim.sub','${viewer}',false)`,
+        );
+        await expect(
+          db.query(
+            `insert into public.projects(organization_id,name,industry,created_by) values('${orgA}','Role intrusion','Construction','${viewer}')`,
+          ),
+        ).rejects.toThrow(/row-level security/);
+      } finally {
+        await db.exec("rollback");
+        await db.exec("reset role");
+      }
+    },
+  );
+  it("revoked membership removes table and storage visibility with the same identity", async () => {
+    await db.exec("begin");
+    try {
+      await db.exec(
+        `delete from public.organization_members where organization_id='${orgA}' and user_id='${alice}'`,
+      );
+      for (const table of [
+        "organizations",
+        "organization_members",
+        "projects",
+        "audit_logs",
+      ]) {
+        expect(
+          (await asUser(alice, `select * from public.${table}`)).rows,
+        ).toHaveLength(0);
+      }
+      expect(
+        (await asUser(alice, "select * from storage.objects")).rows,
+      ).toHaveLength(0);
+      expect(
+        (
+          await asUser(
+            alice,
+            `select public.is_company_admin('${orgA}') as allowed`,
+          )
+        ).rows,
+      ).toEqual([{ allowed: false }]);
+    } finally {
+      await db.exec("rollback");
+    }
+  });
+  it("keeps project filters separate when one identity belongs to two companies", async () => {
+    await db.exec("begin");
+    try {
+      const orgC = (
+        await asUser(
+          alice,
+          "select public.create_organization('Company C') as id",
+        )
+      ).rows[0].id as string;
+      await asUser(
+        alice,
+        `insert into public.projects(organization_id,name,industry,created_by) values('${orgC}','Gamma','Construction','${alice}')`,
+      );
+      expect(
+        (
+          await asUser(
+            alice,
+            `select name from public.projects where organization_id='${orgA}'`,
+          )
+        ).rows,
+      ).toEqual([{ name: "Alpha" }]);
+      expect(
+        (
+          await asUser(
+            alice,
+            `select name from public.projects where organization_id='${orgC}'`,
+          )
+        ).rows,
+      ).toEqual([{ name: "Gamma" }]);
+      expect(
+        (
+          await asUser(
+            bob,
+            `select * from public.projects where organization_id in ('${orgA}','${orgC}')`,
+          )
+        ).rows,
+      ).toHaveLength(0);
+    } finally {
+      await db.exec("rollback");
+    }
+  });
+  it("does not authorize another bucket or a misleading organization prefix", async () => {
+    await db.exec("begin");
+    try {
+      await db.exec(
+        `insert into storage.objects(bucket_id,name) values('other-bucket','${orgA}/other.jpg'),('site-evidence','${orgA}-suffix/other.jpg'),('site-evidence','/${orgA}/other.jpg')`,
+      );
+      expect(
+        (await asUser(alice, "select name from storage.objects")).rows,
+      ).toEqual([{ name: `${orgA}/test.jpg` }]);
+      await db.exec(
+        `set role authenticated; select set_config('request.jwt.claim.sub','${alice}',false)`,
+      );
+      await expect(
+        db.query(
+          `insert into storage.objects(bucket_id,name) values('site-evidence','${orgA}/own-upload.jpg')`,
+        ),
+      ).rejects.toThrow(/row-level security/);
+    } finally {
+      await db.exec("rollback");
+      await db.exec("reset role");
+    }
+  });
+});

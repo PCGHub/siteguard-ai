@@ -1,5 +1,11 @@
 # Phase 1.5: development email authentication
 
+> The owner has now reported successful live confirmation/login, recovery/reset,
+> session persistence, logout and company/project isolation. See the
+> [acceptance review](PHASE_1_5_SIGN_OFF.md). The checklist below defines coverage;
+> it does not mean those owner-demonstrated flows remain untested. Hosted API and
+> Storage security verification remain separate outstanding checks.
+
 ## Supported default-template flow
 
 Use the existing Supabase development project `qaguumtcsshopfeyflrp` and protected

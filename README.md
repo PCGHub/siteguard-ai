@@ -119,3 +119,7 @@ layout. It must not be pointed at a hosted or production project.
 For the Phase 1.5 redirect repair, exact development-project settings and the live acceptance gate, see [docs/AUTH_STAGING.md](docs/AUTH_STAGING.md). Do not begin Phase 2 until the real email-to-dashboard journey passes.
 
 `npm run staging:check` performs read-only deployment/Auth metadata preflight after secure management access is configured. It verifies the exact requested commit and never deploys or changes provider settings; see [the staging deployment gate](docs/AUTH_STAGING.md#repaired-deployment-gate-and-connected-tool-boundaries).
+
+Phase 1.5 owner-reported acceptance and remaining release gates:
+[sign-off review](docs/PHASE_1_5_SIGN_OFF.md). Next development scope:
+[Phase 2 plan](docs/PHASE_2_PLAN.md).
