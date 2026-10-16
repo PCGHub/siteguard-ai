@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   credentials,
+  emailInput,
+  loginInput,
   organizationInput,
   projectInput,
   safeNext,
@@ -56,5 +58,26 @@ describe("untrusted input", () => {
     ])
       expect(safeNext(value)).toBe("/dashboard");
     expect(safeNext("/reset-password")).toBe("/reset-password");
+  });
+});
+
+describe("bounded authentication inputs", () => {
+  it("rejects oversized or non-string emails", () => {
+    expect(
+      emailInput.safeParse("a".repeat(255) + "@example.test").success,
+    ).toBe(false);
+    expect(emailInput.safeParse(new Blob(["fixture"])).success).toBe(false);
+  });
+  it("bounds login passwords while supporting existing short passwords", () => {
+    expect(
+      loginInput.safeParse({ email: "fixture@example.test", password: "old" })
+        .success,
+    ).toBe(true);
+    expect(
+      loginInput.safeParse({
+        email: "fixture@example.test",
+        password: "x".repeat(129),
+      }).success,
+    ).toBe(false);
   });
 });

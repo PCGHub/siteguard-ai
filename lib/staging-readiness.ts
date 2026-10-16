@@ -53,8 +53,11 @@ export function inspectStaging(input: {
     },
     { name: "Deployment is READY", passed: deployment.readyState === "READY" },
     {
-      name: "Deployment is a Preview",
-      passed: deployment.target === null || deployment.target === "preview",
+      name: "Deployment is a non-production Preview/Staging",
+      passed:
+        deployment.target === null ||
+        deployment.target === "preview" ||
+        deployment.target === "staging",
     },
     {
       name: "Exact requested commit deployed",

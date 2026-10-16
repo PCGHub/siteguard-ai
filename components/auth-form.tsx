@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Submit } from "./submit";
+import { logout } from "@/app/actions";
 import { configured } from "@/lib/supabase/server";
 export function AuthForm({
   title,
@@ -64,6 +65,11 @@ export function AuthForm({
               </label>
             )}
             <Submit>{title}</Submit>
+          </form>
+        )}
+        {mode === "reset" && configured() && (
+          <form action={logout}>
+            <Submit>Sign out</Submit>
           </form>
         )}
         <nav className="auth-links">

@@ -52,7 +52,6 @@ if (missing.length) {
       read(
         vercelUrl("/v6/deployments", {
           projectId: stagingProject.vercelId,
-          target: "preview",
           limit: "100",
         }),
         process.env.VERCEL_TOKEN,
@@ -66,14 +65,19 @@ if (missing.length) {
         process.env.SUPABASE_ACCESS_TOKEN,
       ),
     ]);
-    const match = list.deployments?.find(
-      (d) =>
-        d.meta?.githubCommitSha === expectedCommit ||
-        d.gitSource?.sha === expectedCommit,
-    );
+    const candidates =
+      list.deployments?.filter(
+        (d) =>
+          d.target !== "production" &&
+          (d.meta?.githubCommitSha === expectedCommit ||
+            d.gitSource?.sha === expectedCommit),
+      ) ?? [];
+    const match =
+      candidates.find((d) => d.readyState === "READY" || d.state === "READY") ??
+      candidates[0];
     if (!match)
       throw new Error(
-        "No Preview deployment of the exact requested commit was found among the latest 100 deployments.",
+        "No non-production deployment of the exact requested commit was found among the latest 100 deployments.",
       );
     const deployment = await read(
       vercelUrl(`/v13/deployments/${encodeURIComponent(match.uid)}`),
@@ -99,7 +103,7 @@ if (missing.length) {
     // Never print provider payloads, token values, or raw fetch errors.
     const safe =
       error instanceof Error &&
-      /^(EXPECTED_STAGING_COMMIT|Requested commit|Read-only provider check|No Preview deployment)/.test(
+      /^(EXPECTED_STAGING_COMMIT|Requested commit|Read-only provider check|No non-production deployment)/.test(
         error.message,
       )
         ? error.message

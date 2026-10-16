@@ -2,16 +2,25 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { confirmationRedirect } from "@/lib/auth-origin";
-import { z } from "zod";
 import { supabase } from "@/lib/supabase/server";
-import { credentials, organizationInput, projectInput } from "@/lib/validation";
+import {
+  credentials,
+  emailInput,
+  loginInput,
+  organizationInput,
+  projectInput,
+} from "@/lib/validation";
 function fail(path: string, message: string): never {
   redirect(`${path}?message=${encodeURIComponent(message)}`);
 }
 export async function login(form: FormData) {
-  const email = String(form.get("email") ?? ""),
-    password = String(form.get("password") ?? "");
-  if (!email || !password) fail("/login", "Enter your email and password.");
+  const result = loginInput.safeParse(Object.fromEntries(form));
+  if (!result.success)
+    fail(
+      "/login",
+      "Enter a valid email and a password of at most 128 characters.",
+    );
+  const { email, password } = result.data;
   const db = await supabase();
   const { error } = await db.auth.signInWithPassword({ email, password });
   if (error)
@@ -41,9 +50,10 @@ export async function logout() {
 }
 export async function requestReset(form: FormData) {
   const db = await supabase();
-  const email = String(form.get("email") ?? "");
-  if (!/^\S+@\S+\.\S+$/.test(email))
-    fail("/forgot-password", "Enter a valid email.");
+  const result = emailInput.safeParse(form.get("email"));
+  if (!result.success)
+    fail("/forgot-password", "Enter a valid email of at most 254 characters.");
+  const email = result.data;
   const { error } = await db.auth.resetPasswordForEmail(email, {
     redirectTo: confirmationRedirect(),
   });
@@ -72,7 +82,12 @@ export async function resetPassword(form: FormData) {
       "/reset-password",
       "Unable to update password. Request a new recovery email.",
     );
-  await db.auth.signOut();
+  const { error: signOutError } = await db.auth.signOut();
+  if (signOutError)
+    fail(
+      "/reset-password",
+      "Password updated, but sign-out failed. Use Sign out to retry.",
+    );
   fail("/login", "Password updated. Sign in again.");
 }
 export async function createOrganization(form: FormData) {
@@ -112,7 +127,7 @@ export async function createProject(form: FormData) {
 }
 
 export async function resendConfirmation(form: FormData) {
-  const email = z.email().max(254).safeParse(form.get("email"));
+  const email = emailInput.safeParse(form.get("email"));
   if (!email.success)
     fail("/resend-confirmation", "Enter a valid email address.");
   const db = await supabase();

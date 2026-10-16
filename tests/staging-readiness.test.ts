@@ -46,12 +46,18 @@ describe("staging metadata gate (fixtures, no live provider verification)", () =
       )?.passed,
     ).toBe(false);
   });
+  it("accepts the official API Staging target without admitting Production", () => {
+    const f = fixture();
+    f.deployment.target = "staging";
+    expect(inspectStaging(f).every((c) => c.passed)).toBe(true);
+  });
   it("rejects production even when the commit matches", () => {
     const f = fixture();
     f.deployment.target = "production";
     expect(
-      inspectStaging(f).find((c) => c.name === "Deployment is a Preview")
-        ?.passed,
+      inspectStaging(f).find(
+        (c) => c.name === "Deployment is a non-production Preview/Staging",
+      )?.passed,
     ).toBe(false);
   });
   it("rejects builds that are not READY", () => {

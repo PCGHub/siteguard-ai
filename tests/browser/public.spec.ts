@@ -72,3 +72,14 @@ test("confirmation resend has a clear responsive entry point", async ({
     ),
   ).toBe(true);
 });
+
+test("anonymous password reset redirects to sign-in with recovery guidance", async ({
+  page,
+}) => {
+  await page.goto("/reset-password");
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByRole("status")).toContainText("recovery link");
+  await expect(
+    page.getByRole("button", { name: "Set new password", exact: true }),
+  ).toHaveCount(0);
+});

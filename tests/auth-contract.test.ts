@@ -59,6 +59,9 @@ vi.mock("@/lib/supabase/server", async () => {
               app_metadata: {},
               user_metadata: {},
             };
+            if (url.pathname.endsWith("/user")) return Response.json(user);
+            if (url.pathname.endsWith("/logout"))
+              return new Response(null, { status: 204 });
             if (url.pathname.endsWith("/signup"))
               return Response.json({ user, session: null });
             if (
@@ -107,6 +110,7 @@ import {
   login,
   requestReset,
   resendConfirmation,
+  resetPassword,
 } from "../app/actions";
 function form(values: Record<string, string>) {
   const result = new FormData();
@@ -252,6 +256,65 @@ describe("auth SDK and callback contract (stub provider)", () => {
       }
     },
   );
+  it("reports failed sign-out after a successful password reset without claiming logout", async () => {
+    await GET(
+      new NextRequest(
+        "https://staging.example.com/auth/confirm?token_hash=fixture-token-hash&type=recovery",
+      ),
+    );
+    fixture.failPath = "/auth/v1/logout";
+    try {
+      await resetPassword(form({ password: "fixture-new-password-only" }));
+      throw new Error("Expected redirect");
+    } catch (error) {
+      const digest = (error as { digest?: string }).digest;
+      expect(digest).toContain("/reset-password?");
+      expect(digest).toContain("sign-out%20failed");
+    }
+    expect(
+      fixture.requests.some(
+        (r) =>
+          r.path === "/auth/v1/user" &&
+          r.body.password === "fixture-new-password-only",
+      ),
+    ).toBe(true);
+  });
+  it("requires a verified session before updating a password", async () => {
+    await expect(
+      resetPassword(form({ password: "fixture-new-password-only" })),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    expect(fixture.requests).toHaveLength(0);
+  });
+  it("successful recovery logs out before offering sign-in", async () => {
+    await GET(
+      new NextRequest(
+        "https://staging.example.com/auth/confirm?token_hash=fixture-token-hash&type=recovery",
+      ),
+    );
+    try {
+      await resetPassword(form({ password: "fixture-new-password-only" }));
+      throw new Error("Expected redirect");
+    } catch (error) {
+      expect((error as { digest?: string }).digest).toContain(
+        "/login?message=Password%20updated",
+      );
+    }
+    expect(fixture.requests.some((r) => r.path === "/auth/v1/logout")).toBe(
+      true,
+    );
+    expect([...fixture.cookies.values()].filter((c) => c.value)).toHaveLength(
+      0,
+    );
+  });
+  it("rejects oversized authentication inputs before contacting the provider", async () => {
+    for (const [action, values] of [
+      [login, { email: "fixture@example.test", password: "x".repeat(129) }],
+      [requestReset, { email: "a".repeat(260) + "@example.test" }],
+    ] as const) {
+      await expect(action(form(values))).rejects.toThrow("NEXT_REDIRECT");
+    }
+    expect(fixture.requests).toHaveLength(0);
+  });
   it("recovery and resend use the same trusted callback", async () => {
     await expect(
       requestReset(form({ email: "fixture@example.test" })),

@@ -1,6 +1,11 @@
 import { z } from "zod";
+export const emailInput = z.email().max(254);
+export const loginInput = z.object({
+  email: emailInput,
+  password: z.string().min(1).max(128),
+});
 export const credentials = z.object({
-  email: z.email(),
+  email: emailInput,
   password: z.string().min(12).max(128),
 });
 export const organizationInput = z.object({
