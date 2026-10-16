@@ -83,3 +83,21 @@ test("anonymous password reset redirects to sign-in with recovery guidance", asy
     page.getByRole("button", { name: "Set new password", exact: true }),
   ).toHaveCount(0);
 });
+
+test("inspection routes fail closed without a session", async ({ page }) => {
+  for (const path of [
+    "/inspections",
+    "/inspections/new",
+    "/inspections/10000000-0000-4000-8000-000000000001",
+    "/inspections/10000000-0000-4000-8000-000000000001/edit",
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/login/);
+    await expect(
+      page.getByRole("heading", { name: "Sign in", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Save draft", exact: true }),
+    ).toHaveCount(0);
+  }
+});

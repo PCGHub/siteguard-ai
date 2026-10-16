@@ -100,7 +100,75 @@ test("signup, verified session, onboarding, project persistence, logout and pass
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  // Guarded local Mailpit journey only; this is not a hosted acceptance claim.
+  await page.goto("/inspections");
+  await page
+    .getByRole("link", { name: "Create inspection", exact: true })
+    .click();
+  await page
+    .getByLabel("Inspection title", { exact: true })
+    .fill("Local platform inspection");
+  await page
+    .getByLabel("Work area / location", { exact: true })
+    .fill("North platform");
+  await page
+    .getByLabel("Inspection date and time (UTC)", { exact: true })
+    .fill("2026-10-16T12:30");
+  await page
+    .getByLabel("Inspector name", { exact: true })
+    .fill("Synthetic local inspector");
+  await page
+    .getByLabel("Observations", { exact: true })
+    .fill("Synthetic observations requiring review.");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Local platform inspection",
+      exact: true,
+    }),
+  ).toBeVisible();
+  const inspectionPath = new URL(page.url()).pathname;
+  await page.reload();
+  await expect(
+    page.getByRole("heading", {
+      name: "Local platform inspection",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Edit draft", exact: true }).click();
+  await page
+    .getByLabel("Inspection title", { exact: true })
+    .fill("Updated platform inspection");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Submit for review", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Status updated");
+  await expect(
+    page.getByRole("link", { name: "Edit draft", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Begin review", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("link", { name: "Back to company inspections", exact: true })
+    .click();
+  await page
+    .getByLabel("Search title", { exact: true })
+    .fill("Updated platform");
+  await page.getByLabel("Status", { exact: true }).selectOption("submitted");
+  await page
+    .getByRole("button", { name: "Apply filters", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", {
+      name: "Updated platform inspection",
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
+  await page.goto(inspectionPath);
+  await expect(page).toHaveURL(/\/login/);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -108,6 +176,13 @@ test("signup, verified session, onboarding, project persistence, logout and pass
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Test refinery expansion" }),
+  ).toBeVisible();
+  await page.goto(inspectionPath);
+  await expect(
+    page.getByRole("heading", {
+      name: "Updated platform inspection",
+      exact: true,
+    }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.goto("/forgot-password");

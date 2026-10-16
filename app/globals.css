@@ -368,3 +368,107 @@ small {
     overflow-wrap: anywhere;
   }
 }
+/* Inspection management uses the existing workspace palette and controls. */
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #b5c6cf;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+  resize: vertical;
+}
+textarea:focus-visible {
+  outline: 3px solid #bd7200;
+  outline-offset: 3px;
+}
+.inspection-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  background: #102b3b;
+  padding: 20px 28px;
+}
+.inspection-nav a {
+  color: #e6f0f4;
+}
+.inspection-nav form {
+  margin-left: auto;
+}
+.inspection-main {
+  max-width: 1180px;
+  padding: 36px 24px;
+  margin: auto;
+}
+.inspection-main h1,
+.inspection-main h2,
+.inspection-copy dd {
+  overflow-wrap: anywhere;
+}
+.inspection-main > .card {
+  margin-top: 24px;
+}
+.inspection-form {
+  max-width: 800px;
+}
+.inspection-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+.inspection-filters label {
+  margin: 0;
+}
+.inspection-pagination {
+  display: flex;
+  gap: 24px;
+  margin: 24px 0;
+}
+.inspection-copy dl {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 12px;
+}
+.inspection-copy dt {
+  font-weight: 700;
+}
+.inspection-copy dd {
+  margin: 0;
+}
+.preserve-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.inspection-history {
+  padding-left: 24px;
+}
+.inspection-history li {
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .inspection-nav {
+    gap: 14px;
+    padding: 18px;
+  }
+  .inspection-nav .brand {
+    width: 100%;
+  }
+  .inspection-main {
+    padding: 24px 18px;
+  }
+  .inspection-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inspection-copy dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.inspection-main {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

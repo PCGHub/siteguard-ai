@@ -1,5 +1,9 @@
 # Phase 2 implementation plan
 
+> Inspection Management code and embedded tests are now implemented; hosted acceptance
+> is pending. See [Milestone 1 delivery](INSPECTION_MANAGEMENT.md). Subsequent sections
+> remain a plan; uploads, AI, corrective actions and reports are not implemented.
+
 Scope: safety inspections, private photo evidence, preliminary hazard identification,
 human review and reports. Build incrementally on `dev/foundation`, using the existing
 protected staging and development Supabase project. This document is a plan, not a

@@ -51,6 +51,9 @@ export default async function Dashboard({
           Overview
         </Link>
         <a href="#projects">Projects</a>
+        <Link href={`/inspections?org=${selected.organization_id}`}>
+          Inspections
+        </Link>
         <Link href="/onboarding">+ New company</Link>
         <div className="aside-bottom">
           <p>{user.email}</p>
@@ -102,9 +105,11 @@ export default async function Dashboard({
             <small>Enforced by database policies</small>
           </article>
           <article className="card">
-            <p>Next milestone</p>
+            <p>Site records</p>
             <strong className="stat-text">Inspections</strong>
-            <small>Not yet available</small>
+            <Link href={`/inspections?org=${selected.organization_id}`}>
+              View inspections →
+            </Link>
           </article>
         </section>
         <section id="projects" className="project-layout">
@@ -118,6 +123,13 @@ export default async function Dashboard({
                     <span className="badge">{p.industry}</span>
                     <h3>{p.name}</h3>
                     <p>{p.location || "Location not specified"}</p>
+                    <p>
+                      <Link
+                        href={`/inspections?org=${selected.organization_id}&project=${p.id}`}
+                      >
+                        Project inspections →
+                      </Link>
+                    </p>
                     <small>
                       Created{" "}
                       {new Date(p.created_at).toLocaleDateString("en-GB", {
@@ -170,8 +182,8 @@ export default async function Dashboard({
           )}
         </section>
         <p className="footnote">
-          Inspection records and AI analysis will arrive in later milestones. No
-          operational safety metrics are shown until those workflows exist.
+          Inspection records are available. Photo evidence and AI analysis
+          remain planned; reviewed records do not certify site safety.
         </p>
       </main>
     </div>

@@ -123,3 +123,11 @@ For the Phase 1.5 redirect repair, exact development-project settings and the li
 Phase 1.5 owner-reported acceptance and remaining release gates:
 [sign-off review](docs/PHASE_1_5_SIGN_OFF.md). Next development scope:
 [Phase 2 plan](docs/PHASE_2_PLAN.md).
+
+## Phase 2 · Milestone 1: inspection management
+
+Inspection drafts, editing, submission, independent human review, history and
+company/project/date/status filtering are implemented. Apply the reviewed development
+migration `202610160002_inspection_management.sql` before testing the new routes.
+[Features, permission matrix, schema and live acceptance instructions](docs/INSPECTION_MANAGEMENT.md).
+No uploads, AI analysis or PDF reporting are enabled.

@@ -29,3 +29,12 @@ Run `npm run db:test` for PostgreSQL policy tests. Fixtures create only the mini
 Supabase-owned schemas. Passing those tests does not prove hosted API configuration.
 Apply migrations on an approved development project before a hosted acceptance test.
 Backups and retention are operational requirements before production.
+
+## Inspection management
+
+Migration `202610160002_inspection_management.sql` adds inspections and immutable
+history with a composite company/project FK, member-only SELECT RLS and narrowly
+authorized mutation RPCs. Clients have no direct write/delete grants. A trigger
+records versions, actor identity and audit events. See
+[the schema and workflow guide](docs/INSPECTION_MANAGEMENT.md). Both foundation and
+inspection database suites run with `npm run db:test`. Hosted application is pending.

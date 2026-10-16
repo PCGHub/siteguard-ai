@@ -170,3 +170,59 @@ new cases were corrected in the test harness; no application/policy fix was need
 Runtime dependency audit reports zero advisories; full audit still reports five High
 entries from the existing development-tool chain. No new build/browser result is
 claimed for this tests/documentation-only review.
+
+## Phase 2 · Milestone 1: inspection management
+
+Source baseline: `fab7763`, fetched and verified unchanged before implementation.
+The new migration `202610160002_inspection_management.sql` is applied by both
+embedded database suites, in order after the two existing migrations.
+
+Final executed checks:
+
+| Command/check | Actual result |
+| --- | --- |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run db:test` | PASS: 63 tests, 2 files (27 foundation + 36 inspection) |
+| `npm test` | PASS: 155 tests, 8 files; 0 failing, 0 skipped |
+| `npm run build` | PASS: inspection list/new/detail/edit are dynamic protected routes |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e` | PASS: 16 local desktop/mobile browser tests; 0 failing, 0 skipped |
+| Runtime dependency audit | PASS: 0 reported vulnerabilities |
+| Full dependency audit | FAIL: 5 High advisory entries in the existing single development-tool chain; 0 Critical |
+| `git diff --check` | PASS |
+
+The first TypeScript run caught an overly narrow UUID-template type on the new test
+fixture helper's default argument. It was corrected to accept a string so the
+missing-identity negative test compiles. No application check was disabled. Final
+checks above pass. No dependency versions or lockfile changes were needed.
+
+Inspection SQL tests cover persisted drafts, member listing/history, all writing
+roles and viewer denial, author-only editing/submission, self-review denial, assigned
+reviewer enforcement, review notes, stale versions/duplicate submission, create
+idempotency, invalid states and inputs, composite foreign-key attacks, cross-company
+reads/RPC writes/direct update/delete denial, audit forgery, role downgrade and
+membership revocation. New server-action contract tests verify narrow RPC payloads,
+identity/status stripping, validation before mutation and generic conflict/provider
+errors. They mock session/RPC access and are not hosted API tests.
+
+PGlite is real embedded PostgreSQL with minimal fixture Auth/Storage schemas. Its
+JWT identity is simulated for role/RLS testing; no live PostgREST/Storage enforcement
+or real concurrent connection scheduling is claimed. Concurrency coverage executes
+stale-version and duplicate requests sequentially; row locks and unique constraints
+are also reviewed in SQL.
+
+Browser tests ran against the production build **without Supabase configuration**.
+They verify existing public/auth error regressions and fail-closed redirects for all
+inspection routes, not authenticated inspection creation or hosted persistence.
+The guarded local-only Mailpit journey was extended for create/edit/submit/filter,
+refresh and login persistence, but remains **unrun** because the full local Supabase
+stack's previously diagnosed Docker disk limitation remains. Hosted testing also
+remains **unrun**: development provider/public-key credentials are not injected here.
+No live inspection acceptance is claimed. The owner's earlier Phase 1.5 successes
+are preserved separately and are not repurposed as inspection test results.
+
+No hosted migration, provider setting, production deployment, main merge or evidence
+write policy was changed. The High development-tool advisory, public quotas/abuse
+controls, CSP and deployed API/policy checks remain release gates. See
+[inspection delivery and owner acceptance](INSPECTION_MANAGEMENT.md) for the precise
+role matrix, migration procedure and live checklist.

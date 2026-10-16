@@ -27,6 +27,7 @@ export const config = {
   matcher: [
     "/resend-confirmation",
     "/dashboard/:path*",
+    "/inspections/:path*",
     "/onboarding/:path*",
     "/reset-password",
     "/login",

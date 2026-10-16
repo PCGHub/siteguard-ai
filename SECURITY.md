@@ -38,5 +38,13 @@ provider errors and ambiguous credentials fail closed. Optional token-hash links
 retain distinct signup/recovery types. Both flows redirect only to fixed local
 paths and never echo provider error details or tokens. Legacy implicit fragment
 sessions are not accepted; request fresh links from this app.
-Provider success/error responses and cookie handling are covered by stub-contract tests,
-but real staging email/session verification is still required before Phase 2.
+Provider success/error responses and cookie handling are covered by stub-contract tests.
+Owner-reported live Phase 1.5 successes are recorded in docs/PHASE_1_5_SIGN_OFF.md;
+direct hosted API and Storage security checks remain separate release gates.
+
+Inspection records use member-only RLS reads and RPC-only mutations, composite
+company/project foreign keys, mandatory optimistic versions and database-generated
+audit identities. Only authors with writing roles edit/submit their drafts; another
+company admin/HSE manager must review, with no self-review or automatic safety
+approval. New inspection RLS/RPC behavior has been tested in embedded PostgreSQL;
+hosted API enforcement remains unverified. See docs/INSPECTION_MANAGEMENT.md.
